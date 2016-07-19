@@ -351,6 +351,45 @@
         return (typeof (fun) === 'function') ? that.map(fun) : that;
     };
 
+    var bigPermutation = function(ary, nelem, fun) {
+        if (!nelem) nelem = ary.length;
+        if (nelem < 1) throw new RangeError;
+        if (nelem > ary.length) throw new RangeError;
+        var size = P(ary.length, nelem),
+          sizeOf = function() {
+              return size;
+          },
+          that = Object.create(ary.slice(), {
+              length: {
+                  get: sizeOf
+              }
+          });
+        hideProperty(that, 'cmb');
+        hideProperty(that, 'per');
+        addProperties(that, {
+            valueOf: function() {
+                return size;
+            },
+            init: function() {
+                this.cmb = bigCombination(ary, nelem);
+                this.per = _permutation(this.cmb.next());
+            },
+            next: function() {
+                var result = this.per.next();
+                if (!result) {
+                    var cmb = this.cmb.next();
+                    if (!cmb) return;
+                    this.per = _permutation(cmb);
+                    return this.next();
+                }
+                return (typeof (that._lazyMap) === 'function')?that._lazyMap(result):result;
+            }
+        });
+        addProperties(that, common);
+        that.init();
+        return (typeof (fun) === 'function') ? that.map(fun) : that;
+    };
+
     var PC = function(m) {
         var total = 0;
         for (var n = 1; n <= m; n++) {
@@ -517,6 +556,7 @@
         combination: combination,
         bigCombination: bigCombination,
         permutation: permutation,
+        bigPermutation: bigPermutation,
         permutationCombination: permutationCombination,
         power: power,
         baseN: baseN,
